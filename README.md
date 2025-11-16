@@ -779,8 +779,8 @@ sudo systemctl status crowdsec
 ![crowdsec console](./captures/crowdsec_console.jpeg)
 
 - S'assurer que les logs des attaques remontes & bloque le IP :
-    - Test des Scénario d'attaque sur SSH et HTTP généric 
-- Remonté sur la console Crowdsec 
+    - Test des Scénario d'**attaque sur SSH** et **HTTP généric** 
+- **Remonté** sur la console Crowdsec 
 
 ![crowdsec console log](./captures/crowdsec_console_alerte.jpeg)
 
@@ -794,10 +794,11 @@ sudo systemctl status crowdsec
 
 
 Au cours de ce projet sur l'installation et la configuration d'une Infrastructure web via la mairie de Valserac.
+
 On a pu monter en compétence sur : 
 - l'**Administration système** avec l'installation, la configuration et la gestion de services Linux
 - Le **réseaux**, avec les différents NAT, pare-feu, ports et protcoles
-- Une mise en place de **Cybersécurité**, avec une **protection applicative** de `Crowdsec` et d'une protection de **DDos** avec `Evasive`
+- Une mise en place de **Cybersécurité**, avec une **protection applicative** de `Crowdsec` et d'une protection de **DDos simple** avec `Evasive`
 - Une Supervision sur la lecture et exploitation des logs
 - Sur la manipulation applicative des commandes **shell**
 - Ainsi qu'une **redaction de rapport de la documentation technique**
