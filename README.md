@@ -1,8 +1,31 @@
 # Mettez en place des infrastructures et services Web sécurisés
 
-**Projet n°04 - Réalisé dans le cadre de la Formation Openclassrooms - Administrateur systeme réseaux et Cybersécurité**
+**Projet n°04** - Réalisé dans le cadre de la Formation Openclassrooms - **Administrateur systeme réseaux et Cybersécurité**
 
-## ![Static Badge](https://img.shields.io/badge/Mission%20-red) Detail Mission 
+**Prototype Extranet / Intranet** - Mairie de Valserac    
+Prototype pédagogique (Ubuntu 22.04, Apache, FTPS, CrowdSec) pour la formation Administrateur Systèmes, Réseaux & Cybersécurité 
+
+## Sommaire
+1. [Présentation du projet](#présentation-du-projet)
+2. [Architecture du prototype](#architecture-du-prototype)
+3. [Installation du serveur web](#installation-du-serveur-web)
+4. [Mise en place du SSL](#mise-en-place-du-ssl)
+5. [Configuration virtual hosts extranet](#configuration-virtual-hosts-extranet)
+6. [Test Extranet sur https](#test-extranet-sur-https)
+6. [Configuration virtual hosts intranet](#configuration-virtual-hosts-intranet)
+7. [Test Intranet sur https](#test-intranet-sur-https)
+6. [Configuration du Service FTPS](#configuration-du-service-ftps)
+7. [Gestion des Utilisateurs et Permissions](#gestion-des-utilisateurs-et-permissions)
+9. [Teste du FTPS](#teste-du-ftps)
+7. [Configuration du parfeu avec UFW ](#configuration-du-parfeu-avec-ufw)
+8. [Installation et configuration de mod_evasive](#installation-et-configuration-de-mod_evasive)
+9. [Installation et Configuration de Crowdsec](#installation-et-configuration-de-crowdsec)
+10. [Test attaque et remonté sur la console de Crowdsec](#test-attaque-et-remonté-sur-la-console-de-crowdsec)
+11. [Conclusion du Projet](#conclusion-du-projet)
+
+
+## Présentation du Projet
+
 **Objectif :** Créer un prototype opérationnel pour **l’EXTRANET** et **l’INTRANET** de la **mairie de Valserac**, 
 - incluant : 
     - Serveur Web sécurisé, 
@@ -16,33 +39,33 @@ Votre mission : fournir un prototype fonctionnel pour valider l’infrastructure
 
 --- 
 
-## ![Static Badge](https://img.shields.io/badge/Objectif%20-blue) Détail Objectif
-- **n°1.** Installer et configurer une VM Linux avec Ubuntu Server pour le serveur WEB.
+## Architecture du Prototype
+- **1.** Installer et configurer une VM Linux avec Ubuntu Server pour le serveur WEB.
     - Avec deux Pattes Réseaux : 
         - Public simulé avec `150.10.0.0/16`
         - Privé avec `192.168.10.0/24`
 
-- **n°2.** Créer deux sites distincts :  
-  - 🌐 **Extranet public**  - Acces Public simulé sur `150.10.0.0/16`
-  - 🔒 **Intranet privé** - Acces Uniquement via la patte réseau `192.168.10.0/24`
+- **2.** Créer deux sites distincts :  
+  - **Extranet public**  - Acces Public simulé sur `150.10.0.0/16`
+  - **Intranet privé** - Acces Uniquement via la patte réseau `192.168.10.0/24`
 
-- **n°3.** Redirection HTTP vers HTTPS avec generation Certificat SSL
+- **3.** Redirection HTTP vers HTTPS avec generation Certificat SSL
 
-- **n°4.** Mettre en place un serveur FTPS sécurisé
+- **4.** Mettre en place un serveur FTPS sécurisé
     - Les **developpeur** ont *acces* a l'ensemble des fichiers `/Extranet` et `/Intranet`
     - Les **graphistes** ont *accès* seulement aux Dossiers `/Images` de chaque sites, Extranet et Intranet
     - Toute personne ayant *acces* à l'Extranet doit pouvoir deposer un fichier au format `.PDF` dans le dossier `/pdf` dans Extranet depuis l'Extranet
 
-- **n°5.** Configurer un filtrage réseau strict :
+- **5.** Configurer un filtrage réseau strict :
     - Avec UFW
     - Mod_Evasive
 
-- **n°6.** Déployer CrowdSec pour prévenir les attaques :
+- **6.** Déployer CrowdSec pour prévenir les attaques :
     - Simuler des Attaques et Remonter sur la console CrowdSec
 
 ---
 
-## ![Static Badge](https://img.shields.io/badge/ETAPE%20n°1-8A2BE2) Configuration réseau - VM-Serveur
+## ![Static Badge](https://img.shields.io/badge/Installation-8A2BE2) Configuration réseau - VM-Serveur
 
 1. VM Créé via VirtualBox : 
     - OS : Ubuntu Server 22.04 - minimal graphic
@@ -76,7 +99,7 @@ Votre mission : fournir un prototype fonctionnel pour valider l’infrastructure
     - La configuration réseau a été appliqué via : `sudo netplan apply`
     
 
-## **![Static Badge](https://img.shields.io/badge/LABS%20-8A2BE2) Configuration** 
+## **![Static Badge](https://img.shields.io/badge/LABS%20-8A2BE2) Configuration du Lab** 
 |         | SERVEUR | DEV | GRAPHISTE |
 |----------|--------|-----------|-----------|
 | OS      | Ubuntu-Serveur 22.04 | Ubuntu 22.04 | Ubuntu 22.04 |
@@ -93,9 +116,9 @@ On a donc maintenant :
 - [x] Réseaux Fonctionnel inter-machine
 
 ---
-## ![Static Badge](https://img.shields.io/badge/ETAPE%20n°2-8A7BE2) Installation du Serveur Web
+## Installation du serveur web
 
-### ![Static Badge](https://img.shields.io/badge/apache2%20-8A7BE2) Installation
+### ![Static Badge](https://img.shields.io/badge/apache2%20-8A7BE2) Installation d'Apache
 
 - Commande Installation d'Apache
 
@@ -204,7 +227,9 @@ Header always append X-Frame-Options SAMEORIGIN
 
 ---
 ![Static Badge](https://img.shields.io/badge/Certificat%20SSL%20-8A7BE2)
-### **Génération de Certificats SSL Auto-signé avec `openssl`**
+### Mise en place du SSL
+
+Génération de Certificats SSL Auto-signé avec `openssl`
 
 
 - Pour **extranet.valserac.com** :
@@ -246,7 +271,9 @@ sudo openssl req -x509 -nodes -days 365 \   ## Generation ssl
 
 ---
 ![Static Badge](https://img.shields.io/badge/VirtualHost-8A7BE2) ![Static Badge](https://img.shields.io/badge/Extranet-8A5BE2)
-### Creation des fichiers Virtual Host - VHost
+
+### Configuration virtual hosts extranet
+
 - Pour **extranet.valserac.com**
 ```bash
 # FORCER UTILISATION HTTPS
@@ -314,7 +341,11 @@ sudo systemctl restart apache2      ## Relancer
 
 ---
 ![Static Badge](https://img.shields.io/badge/VirtualHost-8A7BE2) ![Static Badge](https://img.shields.io/badge/Extranet-8A5BE2) ![Static Badge](https://img.shields.io/badge/test-7A1CD4) 
-### Teste realisé sur la `vm-graphiste` et `vm-dev`
+
+### Test Extranet sur https
+
+- Teste realisé sur la `vm-graphiste` et `vm-dev`
+
 - Configuration du `/ect/hosts/` pour `150.10.0.5 extranet.valserac.com`
 
 ![Test Extranet sur HTTPS](./captures/capture_extranet_https.jpeg)       
@@ -328,6 +359,9 @@ On a donc un Extranet sur **extranet.valserac.com**:
 
 ---
 ![Static Badge](https://img.shields.io/badge/VirtualHost-8A7BE2) ![Static Badge](https://img.shields.io/badge/Intranet-8A5BE2)
+
+## Configuration virtual hosts intranet
+
 - Pour **intranet.valserac.com** :
     - Ici, pour l'intranet, le choix c'est porté d'écouter sur `5501` pour le HTTP et `5502` pour le HTTPS afin d'eviter les ports trop evident.
     - On va également **restreindre l'accès**, seulement sur la patte Réseau `192.168.10.0/24` 
@@ -404,7 +438,10 @@ Une fois **activé** avec le m**odule a2** et **relancé le systeme** apache ave
 ---
 ![Static Badge](https://img.shields.io/badge/VirtualHost-8A7BE2) ![Static Badge](https://img.shields.io/badge/Intranet-8A5BE2) ![Static Badge](https://img.shields.io/badge/test-7A1CD4) 
 
-### Teste realisé sur la `vm-graphiste` et `vm-dev`
+### Test Intranet sur https
+
+- Teste realisé sur la `vm-graphiste` et `vm-dev`
+
 - Configuration du `/ect/hosts/` pour `192.168.10.5 intranet.valserac.com`
 
 ![Test Extranet sur HTTPS](./captures/capture_intranet_https.jpeg)       
@@ -528,10 +565,10 @@ sudo adduser testdev
 sudo groupadd graph                 ##Creation groupe 
 sudo groupadd dev                   
 sudo groupadd web                   
-sudo usermod a-G graph testgraph    ##Ajout des users au groupe
-sudo usermod a-G dev testdev
-sudo usermod a-G web testgraph 
-sudo userùpd a-F web testsdev
+sudo usermod a -G graph testgraph    ##Ajout des users au groupe
+sudo usermod a -G dev testdev
+sudo usermod a -G web testgraph 
+sudo usermod a -F web testdev
 
 sudo passwd testgraph               ##Ajout mot de passe
 sudo passwd testdev
@@ -588,7 +625,9 @@ sudo chmod -R 770 /var/www/extranet.valserac.com/pdf
 
 ---
 ![Static Badge](https://img.shields.io/badge/FTPS-8A7BE2) ![Static Badge](https://img.shields.io/badge/test-8A3BE2)
-### Teste du FTPS sur les vm-dev et vm-graphiste 
+### Teste du FTPS 
+
+**Sur les `vm-dev` et `vm-graphiste`**
 
 - Afin de **simuler** un environnement de travail inter-département, le choix s'est porter d'utiliser **FileZilla** 
 - Après avoir installer et configuré la connexion via l'interface de FilZilla avec **l'adresse IP du Serveur**, **Le Users** et **mot de passe** adéquat, configuré en **paramètre passive** comme configuré dans le `vsftpd.conf`
@@ -620,7 +659,7 @@ sudo chmod -R 770 /var/www/extranet.valserac.com/pdf
 
 ---
 ![Static Badge](https://img.shields.io/badge/PARFEU-8A7BE2) ![Static Badge](https://img.shields.io/badge/UFW-8A3BE2)
-## Configuration du parfeu avec UFW
+## Configuration du parfeu avec UFW 
 
 La mise en place du parfeu par **UFW** a été mis a jour durant la mise en place du projet web
 
@@ -653,7 +692,7 @@ To                         Action      From
 1. Défense **Local** (Apache) avec le **mod_evasive** vs attaque type DoS simple / abusive sur Apache
 2. Dégense **Collaboratve** au niveau du Systeme avec **Crowdsec** au niveau des IP
 
-### Partie 1 - Installation et configuration de `mod_evasive`
+### Installation et configuration de mod_evasive`
 **Installation**
 
 ```bash
@@ -732,7 +771,7 @@ sudo systemctl status crowdsec
 ---
 ![Static Badge](https://img.shields.io/badge/Securisation-8A7BE2) ![Static Badge](https://img.shields.io/badge/Crowdsec-8A3BE2) ![Static Badge](https://img.shields.io/badge/Console-8A1BE7)
 
-### Après configuration avec la console de Crowdsec & Serveur
+## Test attaque et remonté sur la console de Crowdsec 
 
 - Configureration de notre serveur avec la console Crowdsec 
 
@@ -742,6 +781,7 @@ sudo systemctl status crowdsec
 - S'assurer que les logs des attaques remontes & bloque le IP :
     - Test des Scénario d'attaque sur SSH et HTTP généric 
 - Remonté sur la console Crowdsec 
+
 ![crowdsec console log](./captures/crowdsec_console_alerte.jpeg)
 
 
@@ -751,6 +791,7 @@ sudo systemctl status crowdsec
 
 
 ### Conclusion du Projet 
+
 
 Au cours de ce projet sur l'installation et la configuration d'une Infrastructure web via la mairie de Valserac.
 On a pu monter en compétence sur : 
