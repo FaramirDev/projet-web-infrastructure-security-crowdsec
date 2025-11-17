@@ -493,21 +493,21 @@ On a donc un Intranet sur **intranet.valserac.com**:
 
 ## Les Services SFTP et FTPS 
 
-Nous allons mettre un plance un Service **SFTP** et un Service **FTPS** pour notre infrastructures Web.
+Nous allons mettre un place un Service **SFTP** et un Service **FTPS** pour notre infrastructures Web.
 Qui permettra à nos **Developpeurs** et **Graphiste** de Travailler sur les élements spécifique du site.
 
 Rappels du besoin : 
 - Developpeurs : Acces a l'ensemble de **Extranet** et **Intranet**
-- Graphistes : **Seulement** Acces à repertoire **images** de l'Extranet et Intranet
+- Graphistes : **Seulement** Acces aux repertoires **images** de l'Extranet et de l'Intranet
 
 
-- Les Protocoles **SFTP** et **FTPS** Totalement Différents
+Les Protocoles **SFTP** et **FTPS** sont Totalement Différents :
 
 ---
 ![Static Badge](https://img.shields.io/badge/SFTP-8A3BE2)
 ### Le SFTP ( SSH File Transfer Protocol )
 
-LE SFTP est un protole FTP basé sur SSH :
+Le **SFTP** est un protole **FTP** basé sur **SSH** :
 - Utilise le **Port 22** ( **SSH** Uniquement )
 - Du Chiffrement **via SSH** ( pas de certificat TLS )
 
@@ -577,7 +577,7 @@ sudo chmod -R 750 /var/www/extranet.valserac.com/images
 sudo chmod -R 750 /var/www/intranet.valserac.com/images 
 ```
 
-Configuration Spéciale pour le répertoire `/pdf` uniquement accessible par Apache** 
+Configuration Spéciale pour le répertoire `/pdf` uniquement accessible par **Apache** 
 
 ```bash 
 sudo chown -R www-data:www-data /var/www/extranet.valserac.com/pdf
@@ -591,14 +591,15 @@ Nous avons ici, une configuration qui crée une spération claire des roles et r
 ## Configuration du Service SFTP
 
 Pour la configuration du service SFTP, nous allons crée une Arboressance avec un **chroot**
-Comme nous utilisons le protocle SSH via le port 22, nous devons avec une segmentation de l'espace de travail pour garantir un acces sécurisé. 
+
+Comme nous utilisons le protocle SSH via le port 22, nous devons avoir une segmentation de l'espace de travail pour garantir un acces sécurisé. 
 
 Chacun des utilisateurs, ici **testgraph** et **testdev** auront un acces spécifique a des dossiers spécifique dans un dossier contenu par l'utilisateur et le groupe root.
 
 Nous allons créer un répertoire `sftp/`
 avec un répertoire par utilisateurs : 
-    - testgraph/
-    - testdev/
+- `testgraph/`
+- `testdev/`
 
 Et dans chaque répertoire attribué leur dossier où il pourront travaillé, par un **bind - montage** qui permettra de ne pas travaillé directement dans les repertoires sources.
 
@@ -648,8 +649,9 @@ sudo chown testdev:dev /sftp/testdev/www_extranet
 sudo chown testdev:dev /sftp/testdev/www_intranet
 ```
 
-Nous avons mainteant une architecture avec une gestion des permissions établie en fonction du besoin.
+Nous avons maintenant une architecture avec une gestion des permissions établie en fonction du besoin.
 
+---
 ### Faire le Bind-mount des dossiers web dans le chroot
 
 Pour les graphistes, ici représenter par notre utilisateur **testgrap ** on va monter :
@@ -690,6 +692,7 @@ sudo mount -a
 ```
 
 On va mainteant pouvoir stipuler notre nouvelle configuration au service ssh pour activer le SFTP chroot
+
 En Editant le fichier `etc/ssh/sshd_config`
 
 Puis appliquer via : 
@@ -732,9 +735,9 @@ sur nos `vm-dev` et `vm-graph`
 
 ## Test du Service SFTP 
 
-Notre configuration SFTP étant mis en place, nous allons tester dans un premier temps via la console, puis via le service FileZilla. 
+Notre configuration **SFTP** étant mis en place, nous allons **tester** dans un premier temps via la console, puis via le service FileZilla. 
 
-Via la console avec : 
+Via la console de notre vm-graphiste avec : 
 
 ```bash
 sftp testgraph@192.168.10.5
@@ -743,9 +746,9 @@ sftp testgraph@192.168.10.5
 ![Test SFTP console](./captures/capture_sftp_graphiste_console.jpeg)
 
 
-- [x] Test réussi de l'accès via SFTP via la console 
+- [x] Test réussi de l'accès via **SFTP** via la **console** 
 
-Nous allons passé au test via FileZila qui simulera un environement de travail, nottament pour les graphistes. 
+Nous allons passé au test via **FileZila** qui simulera un environement de travail, nottament pour les graphistes. 
 
 Nous devons dans un premier temps configuré l'acces du SFTP dans FileZilla 
 
@@ -761,7 +764,7 @@ Pour les Developpeurs :
 
 ![Test SFTP Graphiste via FileZilla](./captures/capture_SFTP_fileZilla_02_developpeur.jpeg)
 
-Nous avons donc mainteant un service SFTP via FileZilla configuré et pret à etre opérationnel. 
+Nous avons donc mainteant un service **SFTP** via **FileZilla** configuré et pret à etre **opérationnel**. 
 
 ---
 
