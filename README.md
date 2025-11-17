@@ -12,16 +12,19 @@ Prototype pédagogique (Ubuntu 22.04, Apache, FTPS, CrowdSec) pour la formation 
 4. [Mise en place du SSL](#mise-en-place-du-ssl)
 5. [Configuration virtual hosts extranet](#configuration-virtual-hosts-extranet)
 6. [Test Extranet sur https](#test-extranet-sur-https)
-6. [Configuration virtual hosts intranet](#configuration-virtual-hosts-intranet)
-7. [Test Intranet sur https](#test-intranet-sur-https)
-6. [Configuration du Service FTPS](#configuration-du-service-ftps)
-7. [Gestion des Utilisateurs et Permissions](#gestion-des-utilisateurs-et-permissions)
-9. [Teste du FTPS](#teste-du-ftps)
-7. [Configuration du parfeu avec UFW ](#configuration-du-parfeu-avec-ufw)
-8. [Installation et configuration de mod_evasive](#installation-et-configuration-de-mod_evasive)
-9. [Installation et Configuration de Crowdsec](#installation-et-configuration-de-crowdsec)
-10. [Test attaque et remonté sur la console de Crowdsec](#test-attaque-et-remonté-sur-la-console-de-crowdsec)
-11. [Conclusion du Projet](#conclusion-du-projet)
+7. [Configuration virtual hosts intranet](#configuration-virtual-hosts-intranet)
+8. [Test Intranet sur https](#test-intranet-sur-https)
+9. [Les Services SFTP et FTPS](#les-services-sftp-et-ftps)
+10. [Gestion des Acces et Permissions](#gestion-des-acces-et-permissions)
+11. [Configuration du Service SFTP](#configuration-du-service-sftp)
+12. [Test du Service SFTP ](#test-du-service-sftp)
+13. [Configuration du Service FTPS](#configuration-du-service-ftps)
+14. [Test du service FTPS](#test-du-service-ftps)
+15. [Configuration du parfeu avec UFW ](#configuration-du-parfeu-avec-ufw)
+16. [Installation et configuration de mod_evasive](#installation-et-configuration-de-mod_evasive)
+17. [Installation et Configuration de Crowdsec](#installation-et-configuration-de-crowdsec)
+18. [Test attaque et remonté sur la console de Crowdsec](#test-attaque-et-remonté-sur-la-console-de-crowdsec)
+19. [Conclusion du Projet](#conclusion-du-projet)
 
 
 ## Présentation du Projet
@@ -484,39 +487,356 @@ On a donc un Intranet sur **intranet.valserac.com**:
 
 ---
 
-![Static Badge](https://img.shields.io/badge/FTPS-8A7BE2) ![Static Badge](https://img.shields.io/badge/Configuration-8A5BE2)
+![Static Badge](https://img.shields.io/badge/Configuration-8A7BE2) ![Static Badge](https://img.shields.io/badge/SFTP-8A3BE2)
+![Static Badge](https://img.shields.io/badge/FTPS-2B3BE2)
+
+
+## Les Services SFTP et FTPS 
+
+Nous allons mettre un plance un Service **SFTP** et un Service **FTPS** pour notre infrastructures Web.
+Qui permettra à nos **Developpeurs** et **Graphiste** de Travailler sur les élements spécifique du site.
+
+Rappels du besoin : 
+- Developpeurs : Acces a l'ensemble de **Extranet** et **Intranet**
+- Graphistes : **Seulement** Acces à repertoire **images** de l'Extranet et Intranet
+
+
+- Les Protocoles **SFTP** et **FTPS** Totalement Différents
+
+---
+![Static Badge](https://img.shields.io/badge/SFTP-8A3BE2)
+### Le SFTP ( SSH File Transfer Protocol )
+
+LE SFTP est un protole FTP basé sur SSH :
+- Utilise le **Port 22** ( **SSH** Uniquement )
+- Du Chiffrement **via SSH** ( pas de certificat TLS )
+
+---
+![Static Badge](https://img.shields.io/badge/FTPS-2B3BE2)
+### LE FTPS ( FTP avec chiffrement TLS )
+
+Extension sécurisé du protocole FTP classique
+- Utilise le **port 21** ( Commande )
+- Utilise le **port 20** ( data ) ou ports passifs ( ici, on configurera des ports passifs )
+- Du Chiffrement **via TLS** ( certifcat )
+
+
+---
+![Static Badge](https://img.shields.io/badge/Configuration-8A7BE2) ![Static Badge](https://img.shields.io/badge/SFTP-8A3BE2)
+## Gestion des Acces et Permissions
+
+Nous allons créer un **Groupe** pour les **Graphistes** et un **groupe** pour les **Developpeurs**
+
+- Groupe Graphistes : **graph**
+- Groupe Developpeurs : **dev**
+
+Pour le Test de la configuration, nous allons créer 2 utilisateurs : 
+
+- Graphiste : **testgraph**
+- Developeur : **testdev**
+
+
+```bash
+sudo adduser testgraph              ##Creation user
+sudo adduser testdev 
+
+sudo groupadd graph                 ##Creation groupe 
+sudo groupadd dev                   
+                 
+sudo usermod a -G graph testgraph    ##Ajout des users au groupe
+sudo usermod a -G dev testdev
+
+sudo passwd testgraph               ##Ajout mot de passe
+sudo passwd testdev
+```
+
+Maintenant que les utilisateurs et groupes sont établie. Nous allons pouvoir attribuer des droits et permissions sur les fichiers du sites, en fonction de leur besoin.
+
+Le choix a été fait de garder apache en proprietaire (www-data) sur l'ensemble des fichiers dans un premier temps, puis d'attribuer via le Groupe les acces - permission des fonctions.
+
+Pour l'architecture général et l'acces aux dossiers : 
+- extranet.valserac.com
+- intranet.valserac.com 
+
+Ce sera donc Apache **(www-data)** en propriétaire-utilisateur et en groupe **dev**
+- Avec une permission de `750` (r-w-x et r-x)
+
+```bash
+sudo chown -R www-data:dev /var/www/extranet.valserac.com
+sudo chown -R www-data:dev /var/www/intranet.valserac.com
+sudo chmod -R 750 /var/www/extranet.valserac.com
+sudo chmod -R 750 /var/www/intranet.valserac.com
+```
+
+On peut donc maintenant passé à l'attribution du fichier `/images` par le groupe `graphiste` 
+
+```bash
+sudo chown -R www-data:graph /var/www/extranet.valserac.com/images
+sudo chown -R www-data:graph /var/www/intranet.valserac.com/images
+sudo chmod -R 750 /var/www/extranet.valserac.com/images
+sudo chmod -R 750 /var/www/intranet.valserac.com/images 
+```
+
+Configuration Spéciale pour le répertoire `/pdf` uniquement accessible par Apache** 
+
+```bash 
+sudo chown -R www-data:www-data /var/www/extranet.valserac.com/pdf
+sudo chmod -R 750 /var/www/extranet.valserac.com/pdf
+```
+
+Nous avons ici, une configuration qui crée une spération claire des roles et respecte le principe de sécurité du **moindre privilège**, chaque utilisateur n'a acces qu'aux ressources **strictement** nécessaire à son travail
+
+---
+![Static Badge](https://img.shields.io/badge/Configuration-8A7BE2) ![Static Badge](https://img.shields.io/badge/SFTP-8A3BE2)
+## Configuration du Service SFTP
+
+Pour la configuration du service SFTP, nous allons crée une Arboressance avec un **chroot**
+Comme nous utilisons le protocle SSH via le port 22, nous devons avec une segmentation de l'espace de travail pour garantir un acces sécurisé. 
+
+Chacun des utilisateurs, ici **testgraph** et **testdev** auront un acces spécifique a des dossiers spécifique dans un dossier contenu par l'utilisateur et le groupe root.
+
+Nous allons créer un répertoire `sftp/`
+avec un répertoire par utilisateurs : 
+    - testgraph/
+    - testdev/
+
+Et dans chaque répertoire attribué leur dossier où il pourront travaillé, par un **bind - montage** qui permettra de ne pas travaillé directement dans les repertoires sources.
+
+Configration de l'arborescence du sftp : 
+
+```bash
+/sftp/
+│── testgraph/
+│     ├── extranet_images/
+│     └── intranet_images/
+│
+└── testdev/
+      ├── www_extranet/
+      └── www_intranet/
+```
+
+Commande configuration : 
+
+```bash
+sudo mkdir -p /sftp/testgraph/extranet_images
+sudo mkdir -p /sftp/testgraph/intranet_images
+
+sudo mkdir -p /sftp/testdev/www_extranet
+sudo mkdir -p /sftp/testdev/www_intranet
+```
+
+Commande Configuration des permissions pour un **chroot** :
+
+```bash
+sudo chown root:root /sftp
+sudo chmod 755 /sftp
+
+sudo chown root:root /sftp/testgraph
+sudo chmod 755 /sftp/testgraph
+
+sudo chown root:root /sftp/testdev
+sudo chmod 755 /sftp/testdev
+```
+
+Commande Configuration Repertoire accessible en écriture par les utilisateurs : 
+
+```bash
+sudo chown testgraph:graph /sftp/testgraph/extranet_images
+sudo chown testgraph:graph /sftp/testgraph/intranet_images
+
+sudo chown testdev:dev /sftp/testdev/www_extranet
+sudo chown testdev:dev /sftp/testdev/www_intranet
+```
+
+Nous avons mainteant une architecture avec une gestion des permissions établie en fonction du besoin.
+
+### Faire le Bind-mount des dossiers web dans le chroot
+
+Pour les graphistes, ici représenter par notre utilisateur **testgrap ** on va monter :
+- `/var/www/extranet.valserac.com/images` vers `/sftp/testgraph/extranet_images`
+- `/var/www/intranet.valserac.com/images` vers `/sftp/testgraph/intranet_images`
+
+Pour les Developeurs, dans l'espace chroot du **dev** on va monter : 
+- `/var/www/extranet.valserac.com` vers `/sftp/testdev/www_extranet`
+- `/var/www/extranet.valserac.com` vers `/sftp/testdev/www_extranet`
+
+Commande avec `mount --bind` :
+
+```bash 
+sudo mount --bind /var/www/extranet.valserac.com/images /sftp/testgraph/extranet_images
+sudo mount --bind /var/www/intranet.valserac.com/images /sftp/testgraph/intranet_images
+
+sudo mount --bind /var/www/extranet.valserac.com /sftp/testdev/www_extranet
+sudo mount --bind /var/www/intranet.valserac.com /sftp/testdev/www_intranet
+```
+
+Nous allons rendre les montages persistants en editant le fichier `fstab`  ( /etc/fstab )
+
+Puis rajouter : 
+
+```bash
+# SFTP chroots bind mounts
+/var/www/extranet.valserac.com/images   /sftp/testgraph/extranet_images   none    bind  0 0
+/var/www/intranet.valserac.com/images   /sftp/testgraph/intranet_images   none    bind  0 0
+
+/var/www/extranet.valserac.com          /sftp/testdev/www_extranet        none    bind  0 0
+/var/www/intranet.valserac.com          /sftp/testdev/www_intranet        none    bind  0 0
+```
+
+Puis appliquer la nouvelle configuration :
+
+```bash
+sudo mount -a
+```
+
+On va mainteant pouvoir stipuler notre nouvelle configuration au service ssh pour activer le SFTP chroot
+En Editant le fichier `etc/ssh/sshd_config`
+
+Puis appliquer via : 
+
+```bash
+Subsystem sftp internal-sftp
+
+Match Group graph
+    ChrootDirectory /sftp/%u
+    ForceCommand internal-sftp
+    AllowTCPForwarding no
+    X11Forwarding no
+
+Match Group dev
+    ChrootDirectory /sftp/%u
+    ForceCommand internal-sftp
+    AllowTCPForwarding no
+    X11Forwarding no
+```
+
+Valider en suite la mise en place de la Config & redemarrer le service ssh: 
+
+```bash
+sudo sshd -t
+sudo systemctl restart ssh
+```
+
+Vérifier que notre service ssh et activé via : 
+
+```bash 
+sudo systemctl status ssh
+```
+
+Nous allons pouvoir mainteant tester notre configuration du service SFTP avec chroot
+sur nos `vm-dev` et `vm-graph`
+
+---
+![Static Badge](https://img.shields.io/badge/Configuration-8A7BE2) ![Static Badge](https://img.shields.io/badge/SFTP-8A3BE2)
+![Static Badge](https://img.shields.io/badge/Test-8A5BE8)
+
+## Test du Service SFTP 
+
+Notre configuration SFTP étant mis en place, nous allons tester dans un premier temps via la console, puis via le service FileZilla. 
+
+Via la console avec : 
+
+```bash
+sftp testgraph@192.168.10.5
+``` 
+
+![Test SFTP console](./captures/capture_sftp_graphiste_console.jpeg)
+
+
+- [x] Test réussi de l'accès via SFTP via la console 
+
+Nous allons passé au test via FileZila qui simulera un environement de travail, nottament pour les graphistes. 
+
+Nous devons dans un premier temps configuré l'acces du SFTP dans FileZilla 
+
+![Test SFTP via FileZilla](./captures/capture_SFTP_fileZilla_01.jpeg)
+
+Une fois configuré on peut accèder a nos dossiers respectifs avec les identifiants et mot de passe de chacun
+
+Pour les Graphistes : 
+
+![Test SFTP Graphiste via FileZilla](./captures/capture_SFTP_fileZilla_02_graphiste.jpeg)
+
+Pour les Developpeurs : 
+
+![Test SFTP Graphiste via FileZilla](./captures/capture_SFTP_fileZilla_02_developpeur.jpeg)
+
+Nous avons donc mainteant un service SFTP via FileZilla configuré et pret à etre opérationnel. 
+
+---
+
+![Static Badge](https://img.shields.io/badge/Configuration-8A5BE2)
+![Static Badge](https://img.shields.io/badge/FTPS-2B3BE2)
+
 ## Configuration du Service FTPS
 
-- Nous allons maintenant passez à la configuration du service FTP Sécurisé pour nos déveoppeur et Graphiste
-- Rappels de la configuration necessaire : 
-    - Les graphistes doivent pouvoir acceder au fichier /`images` de chaque site 
-    - Les developpeurs doivent pouvoir avoir **acces à l'ensemble** des fichiers des sites. 
+Nous allons maintenant passez à la configuration du service FTP Sécurisé pour nos déveoppeur et Graphiste, a des fin de découverte et de mise en pratique de ce service.
 
-- Pour le service FTP nous allons utilisé le service `vsftp`
+Nous allons nous appuyser sur le dossier chroot du service SFTP mis en place. 
+Avec un acces FTPS sur les dossiers de nos utilisateurs, testgraph et testdev
+
+Le service FTP et proposé par `vsftp` que nous allons installé et configuré
 
 ```bash
 sudo apt install vsftpd -y                       ##Installation 
 sudo cp /etc/vsftpd.conf /etc/vsftpd.conf.backup ##Backup de la config initial
 ```
-- Nous allons editer le fichier de configuration du service `vsftp`
-    - ici `/etc/vsftpd.conf`
-- Nous allons également **générer un certificat TLS** pour le service FTP afin de sécuriser les tranferts ici 
 
-![Static Badge](https://img.shields.io/badge/Certificat%20TLS-8A7BE2)
+Avant de configurer le fichier de configuration de vsftpd, nous allons générer un certificat TLS pour sécurisé les échanges FTP et avoir un serivce FTPS
+
 ```bash
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 -keyout /etc/apache2/ssl/vsftpd.key \
 -out /etc/apache2/ssl/vsftpd.pem
 ```
-![Static Badge](https://img.shields.io/badge/vsftpd.conf-8A7BE2)
-- Configuration supplémentaire apporté : 
-    - Ecoute sur les ports `40000` et `40100`
-    - En acces uniquement via l'interface réseau `192.168.10.5`
+à noter ici que le lab, la .key et le .pem sont stocké dans notre repertoire ssl
+
+Comme nous avons ébalis des dossiers spécifique aux utilisateurs **testgraph** et **testdev**
+Nous devons stipuler à `vsftpd` ( notre service FTP ) que chaque utilisateur aura un dossier spécifique. Pour ca, on créer un fichier de configuration pour chaque session dans le dossier qui ce trouve ici :
+- `etc/vsftd_user_conf/`
+
+On aura donc un fichier de configuration pour :
+- testgraph
+- testdev
+
+avec la configuration oour la session testgrap : 
 
 ```bash
-## PARAMETRE généraux
+local_root=/sftp/testgraph
+write_enable=YES
+anon_world_readable_only=NO
+anon_upload_enable=NO
+local_umask=022
+```
+
+et pour la session testdev :
+
+```bash
+ocal_root=/sftp/testdev
+write_enable=YES
+anon_world_readable_only=NO
+anon_upload_enable=NO
+local_umask=022
+```
+De cette manière, lors de chaque session établie via FTPS les utilisateurs tomberons directement dans leur repertoires comme via le protocle SFTP que nous avons mis en place précedemment.
+
+Nous devons maintenant **configuré** le service FTP via `vsftp.conf` en stipulant que chaque utilisateur a son **local root.**
+
+Rappel que le protocole FTP utilise plusieurs ports pour les échanges : 
+- Le **port 21** pour la **commande**
+- le **port 20** pour la **data** ou les ports **passifs**
+- Ici nous utiliserons également les ports **passif** sur `4000` à `40100`
+- Et un acces **uniquement** via l'interface réseau du serveur `192.168.10.5`
+
+Nous pouvons donc editer le fichier de configuration du service `vsftp`
+qui se trouve ici `/etc/vsftpd.conf` avec les élements suiviant : 
+
+```bash
+# Paramètres généraux
 listen=YES
 listen_ipv6=NO
+#connect_from_port_20=YES
+#connect_from_port_21=YES
 
 write_enable=YES
 dirmessage_enable=YES
@@ -526,37 +846,35 @@ xferlog_std_format=YES
 secure_chroot_dir=/var/run/vsftpd/empty
 pam_service_name=vsftpd
 
-## Désactiver Acces anonyme
+# Désactiver explicitement l'accès anonyme
 anonymous_enable=NO
 
 listen_address=192.168.10.5
 
-## Configuration du chroot utilisateurs
+# Configuration du chroot utilisateurs
 local_enable=YES
 chroot_local_user=YES
 allow_writeable_chroot=YES
-local_root=/var/www
+user_config_dir=/etc/vsftpd_user_conf
 
 
-## Configuration du mode passif
+# Configuration du mode passif
 pasv_enable=YES
 pasv_min_port=40000
 pasv_max_port=40100
 pasv_address=192.168.10.5
 
 
-## Configuration de journalisation avancée
+# Configuration de journalisation avancée
 log_ftp_protocol=YES
 xferlog_enable=YES
 xferlog_std_format=YES
 xferlog_file=/var/log/vsftpd.log
 
-
-## SECU Transfert
+# Sécuriser les transferts
 rsa_cert_file=/etc/apache2/ssl/vsftpd.pem
 rsa_private_key_file=/etc/apache2/ssl/vsftpd.key
 
-## SSL SECU
 ssl_enable=YES
 allow_anon_ssl=NO
 force_local_data_ssl=YES
@@ -567,135 +885,49 @@ ssl_sslv3=NO
 require_ssl_reuse=NO
 ssl_ciphers=HIGH
 ```
-- On va pouvoir **redemarrer** et **activer** les services par default
+
+On va pouvoir **redemarrer** et **activer** les services par default
 
 ```bash
 sudo systemctl restart vsftpd
 sudo systemctl enable vsftpd
 sudo systemctl status vsftpd   ##Checker le status actifs
 ```
-![Static Badge](https://img.shields.io/badge/FTPS-8A7BE2) ![Static Badge](https://img.shields.io/badge/Permissions-8A3BE2)
-
-### Gestion des Utilisateurs et Permissions
- - Nous allons maintenant pouvoir **créer les groupes** utilisateurs pour l'accès au différents fichiers 
-    - Pour les graphistes 
-        - Groupe : **graph**
-        - user : `testgraph`
-    - Pour les developpeurs 
-        - Groupe : **dev**
-        - user : `testdev`
-    - Pour les graphistes et developpeurs 
-        - Groupe : **web**
-        - user : `testgraph` & `testdev`
-
-```bash
-sudo adduser testgraph              ##Creation user
-sudo adduser testdev               
-sudo groupadd graph                 ##Creation groupe 
-sudo groupadd dev                   
-sudo groupadd web                   
-sudo usermod a -G graph testgraph    ##Ajout des users au groupe
-sudo usermod a -G dev testdev
-sudo usermod a -G web testgraph 
-sudo usermod a -F web testdev
-
-sudo passwd testgraph               ##Ajout mot de passe
-sudo passwd testdev
-```
-
-- On peut donc maintenant attribué les bonnes attribution et permission aux dossiers
-- Le choix a été fait de garder apache en proprietaire (www-data) sur l'ensemble des fichiers 
-
-- Pour l'architecture général et l'acces aux dossiers : 
-    - extranet.valserac.com
-    - intranet.valserac.com 
-
-afin de ne pas bloquer les graphistes qui ont seulenement accès au dossier image,
-on a donc  créé le groupe `web` avec `testgraph` et `testdev`, qui auront accès a ces deux dossiers.
-Avec permission de `750`, qui permettraau groupe d'y avoir seulement acces.
-
-```bash
-sudo chown www-data:web /var/www/extranet.valserac.com
-sudo chown www-data:web /var/www/intranet.valserac.com
-sudo chmod 750 /var/www/extranet.valserac.com
-sudo chmod 750 /var/www/intranet.valserac.com
-```
-
-- Puis à l'intérieur de ses deux répertoires, ce sera toujours **apache** en propriétaire et le **groupe dev** qui ont l'accès
-- Avec une permission ici pour une gestion des **développeurs** attribué à `770`
-
-```bash
-sudo chown -R www-data:dev /var/www/extranet.valserac.com/*
-sudo chown -R www-data:dev /var/www/intranet.valserac.com/*
-sudo chmod -R 770 /var/www/extranet.valserac.com/*
-sudo chmod -R 770 /var/www/intranet.valserac.com/*
-```
-- On peut donc mainteant passé à l'attribution du fichier `/images` par le groupe `web` pour : 
-    - Un acces des graphistes
-    - Un acces pour les developpeurs
-
-```bash
-sudo chown -R www-data:web /var/www/extranet.valserac.com/images
-sudo chown -R www-data:web /var/www/intranet.valserac.com/images
-sudo chmod -R 770 /var/www/extranet.valserac.com/images
-sudo chmod -R 770 /var/www/intranet.valserac.com/images 
-```
-
-- **Configuration Spéciale pour le répertoire `/pdf` uniquement accessible par Apache** 
-
-```bash 
-sudo chown -R www-data:www-data /var/www/extranet.valserac.com/pdf
-sudo chmod -R 770 /var/www/extranet.valserac.com/pdf
-```
-
-![crowdsec console](./captures/capture_permission.jpeg)
-
-
-- On a donc maintenant un accès spécifique par groupe d'utilisations et une segmentation des permissions
-- Ainsi qu'une configuration de vsftpd utilisable
+Nous avons mainteant une configuration du service FTPS via **vsftpd** établie et prete à etre tester sur nos vm.  
 
 ---
+![Static Badge](https://img.shields.io/badge/Configuration-8A7BE2) 
+![Static Badge](https://img.shields.io/badge/FTPS-2B3BE2)
 ![Static Badge](https://img.shields.io/badge/FTPS-8A7BE2) ![Static Badge](https://img.shields.io/badge/test-8A3BE2)
-### Teste du FTPS 
+
+## Test du service FTPS 
 
 **Sur les `vm-dev` et `vm-graphiste`**
 
-- Afin de **simuler** un environnement de travail inter-département, le choix s'est porter d'utiliser **FileZilla** 
-- Après avoir installer et configuré la connexion via l'interface de FilZilla avec **l'adresse IP du Serveur**, **Le Users** et **mot de passe** adéquat, configuré en **paramètre passive** comme configuré dans le `vsftpd.conf`
+Afin de **simuler** un environnement de travail inter-département, nous avons également tester via le service FileZilla
+
+Après avoir installer et configuré la connexion via l'interface de FileZilla avec **l'adresse IP du Serveur**, **Le Users** et **mot de passe** adéquat
+Puis également configuré la connexion en **paramètre passive** comme configuré dans le `vsftpd.conf` nous devons stipuler les échanges en mode passive également.
 
 1. **Acces des comptes par fileZilla :**
+![Config FTPS sur FileZilla](./captures/capture_FTPS_fileZilla_01.jpeg)
 
-![Test Extranet sur HTTPS](./captures/file_zila_connexion.jpeg)
+2. **Acces testgraph via fileZilla :**
+![acces FTPS testgraph sur FileZilla](./captures/capture_FTPS_fileZilla_02_graphiste.jpeg)
 
-2. Connexion avec le compte **Developpeur**
-
-![Test Extranet sur HTTPS](./captures/dev_acces_filezilla.jpeg)
-- [x] **Etablie** ayant acces à l'ensemble des fichiers
-
-3. **Connexion avec le compte Graphiste** ( exemple sur le répertoire `/css`)
-
-![Test Extranet sur HTTPS](./captures/graph_acces_filezilla.jpeg)
-- [x] **Etablie** ayant acces refusé au autres répertoires du site ( exemple sur le répertoire `/css`)
-
-3. **Connexion avec le compte Graphiste** ( exemple sur le répertoire `/images`)
-
-![Test Extranet sur HTTPS](./captures/graph_acces_2_filezilla.jpeg)
-
-
-- **Vérification** sur le **serveur** apres **Test upload** : 
-
-![crowdsec console](./captures/capture_extranet_ftps_testupload.jpeg)
+3. **Acces testdev via fileZilla :**
+![Config FTPS testdev sur FileZilla](./captures/capture_FTPS_fileZilla_02_dev.jpeg)
 
 
 - [x] **Etablie** ayant acces reussi sur le dossier `/images`
 - [x] **Test Upload** reussi dans le dossier `/images`
 
-
+Nous avons mainteant une connexion **FTPS** Etablie et **fonctionnelle**
 
 
 ![Static Badge](https://img.shields.io/badge/FTPS-8A7BE2) ![Static Badge](https://img.shields.io/badge/ETABLIE-8A3BE2)
 
-### On a donc maintenant un service FTP Sécurisé établie sur notre serveur et un accès spécifique par compte *Devloppeur* et *Graphiste*.
+### Nous offrons donc mainteant un service **SFTP** et **FPTS** mis en place sur notre infrastructure web sécurisé via un acces chroot
 
 ---
 ![Static Badge](https://img.shields.io/badge/PARFEU-8A7BE2) ![Static Badge](https://img.shields.io/badge/UFW-8A3BE2)
