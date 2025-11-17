@@ -337,8 +337,27 @@ sudo systemctl reload apache2       ## Reloader Apache2
 ```bash
 sudo apache2ctl configtest          ## Si synthaxe Ok
 sudo systemctl restart apache2      ## Relancer
+sudo systemctl status apache2       ## Checker le Status d'Apache
+```
+![Test Extranet sur HTTPS](./captures/capture_apache2_status.jpeg) 
+
+
+- On va également vérifier que Apache2 écoute bien sur les ports spécifique de notre configuration : 
+
+```bash
+sudo ss -tulnp | grep apache2
 ```
 
+![Test Extranet sur HTTPS](./captures/capture_test_port_ecoute_apache2.jpeg) 
+
+- On a également tester avec la commande `curl` que le site `extranet` est accessible en Local avant de passer au test sur les vm-graphiste et vm-dev
+
+```bash
+curl -Ik https://150.10.0.5
+```
+![Test Extranet sur HTTPS](./captures/capture_apache2_test_local_extranet.jpeg) 
+
+- [x] Test Local Reussi, on peut donc passer au test sur les autres vm
 ---
 ![Static Badge](https://img.shields.io/badge/VirtualHost-8A7BE2) ![Static Badge](https://img.shields.io/badge/Extranet-8A5BE2) ![Static Badge](https://img.shields.io/badge/test-7A1CD4) 
 
@@ -433,7 +452,17 @@ Nous pouvons maintenant passez à la **configuration** de la VHost nommé **intr
     CustomLog ${APACHE_LOG_DIR}/intranet_access.log combined
 </VirtualHost>
 ```
-Une fois **activé** avec le m**odule a2** et **relancé le systeme** apache avec les commandes plus haut. Nous pouvons donc maintenant tester sur nos `vm-dev` et `vm-graphiste`
+Une fois **activé** avec le **module a2** et **relancé le systeme** apache avec les commandes plus haut. Nous pouvons donc maintenant tester locaux avant le test sur nos `vm-dev` et `vm-graphiste`
+
+- On a également tester avec la commande `curl` que le site `inttranet` est accessible en Local avant de passer au test sur les vm-graphiste et vm-dev
+
+```bash
+curl -Ik https://192.168.10.5:5502
+```
+![Test intranet sur HTTPS](./captures/capture_apache2_test_local_intranet.jpeg) 
+
+- [x] Test Local Reussi, on peut passer au test sur les vm
+
 
 ---
 ![Static Badge](https://img.shields.io/badge/VirtualHost-8A7BE2) ![Static Badge](https://img.shields.io/badge/Intranet-8A5BE2) ![Static Badge](https://img.shields.io/badge/test-7A1CD4) 
@@ -619,6 +648,8 @@ sudo chown -R www-data:www-data /var/www/extranet.valserac.com/pdf
 sudo chmod -R 770 /var/www/extranet.valserac.com/pdf
 ```
 
+![crowdsec console](./captures/capture_permission.jpeg)
+
 
 - On a donc maintenant un accès spécifique par groupe d'utilisations et une segmentation des permissions
 - Ainsi qu'une configuration de vsftpd utilisable
@@ -650,8 +681,17 @@ sudo chmod -R 770 /var/www/extranet.valserac.com/pdf
 
 ![Test Extranet sur HTTPS](./captures/graph_acces_2_filezilla.jpeg)
 
+
+- **Vérification** sur le **serveur** apres **Test upload** : 
+
+![crowdsec console](./captures/capture_extranet_ftps_testupload.jpeg)
+
+
 - [x] **Etablie** ayant acces reussi sur le dossier `/images`
 - [x] **Test Upload** reussi dans le dossier `/images`
+
+
+
 
 ![Static Badge](https://img.shields.io/badge/FTPS-8A7BE2) ![Static Badge](https://img.shields.io/badge/ETABLIE-8A3BE2)
 
@@ -767,6 +807,10 @@ labels:
 sudo systemctl reload crowdsec
 sudo systemctl status crowdsec
 ```
+![crowdsec console](./captures/crowdsec_server_status.jpeg)
+
+**Crowdsec** est maintenant **actif** et **opérationnel**
+
 
 ---
 ![Static Badge](https://img.shields.io/badge/Securisation-8A7BE2) ![Static Badge](https://img.shields.io/badge/Crowdsec-8A3BE2) ![Static Badge](https://img.shields.io/badge/Console-8A1BE7)
@@ -778,12 +822,29 @@ sudo systemctl status crowdsec
 
 ![crowdsec console](./captures/crowdsec_console.jpeg)
 
+- Avant de tester les test d'attaques, vérifions que les collections pour défendre notre serveur Web sont bien installé sur le serveur :
+```bash
+sudo cscli collections list
+```
+![crowdsec console log](./captures/crowdsec_server_install_1.jpeg)
+
+
+
+- Puis ensuite vérifier que le Bouncer ( le bloquer ) est également bien installé sur le serveur :
+
+```bash
+sudo cscli bouncers list
+```
+![crowdsec console](./captures/crowdsec_server_install_bouncer.jpeg)
+
+
+Les Collections et le Bouncer pour apache sont bien installé sur le serveur, on peut donc passer au test d'attaque pour :
+
 - S'assurer que les logs des attaques remontes & bloque le IP :
-    - Test des Scénario d'**attaque sur SSH** et **HTTP généric** 
-- **Remonté** sur la console Crowdsec 
+    - Avec les Test des Scénario d'**attaque sur SSH** et **HTTP généric** 
+- Puis vérifier la **Remonté** sur la console Crowdsec 
 
-![crowdsec console log](./captures/crowdsec_console_alerte.jpeg)
-
+![crowdsec console](./captures/crowdsec_console_alerte.jpeg)
 
 - On a donc mainteant notre serveur web qui possède une sécurisation via 
     - `mod_evasive` d'Apache vs les **DDos simple**
@@ -793,10 +854,8 @@ sudo systemctl status crowdsec
 ### Conclusion du Projet 
 
 
-Au cours de ce projet sur l'installation et la configuration d'une Infrastructure web via la mairie de Valserac.
-
-On a pu monter en compétence sur : 
-- l'**Administration système** avec l'installation, la configuration et la gestion de services Linux
+Au cours de ce projet sur l'installation et la configuration d'une Infrastructure web via la mairie de Valserac, on a pu appliquer les compétences en :
+- **Administration système** avec l'installation, la configuration et la gestion de services Linux
 - Le **réseaux**, avec les différents NAT, pare-feu, ports et protcoles
 - Une mise en place de **Cybersécurité**, avec une **protection applicative** de `Crowdsec` et d'une protection de **DDos simple** avec `Evasive`
 - Une Supervision sur la lecture et exploitation des logs
