@@ -1126,4 +1126,7 @@ Au cours de ce projet sur l'installation et la configuration d'une Infrastructur
 **Merci** d'avoir pris le temps de lire mon projet **d'infrastruce web**, un projet qui s'inscrit dans l'apprentissage et la monté en compétences au travers de la formation **Administrateur système, réseaux et cybersécurité.**
 
 ---
-**Alexis alias Faramir!**
+
+ **Alexis alias Faramir!**   ![crowdsec console](./icone/bouclier_extr_low.png)
+   
+
