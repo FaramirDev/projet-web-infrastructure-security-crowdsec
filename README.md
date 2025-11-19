@@ -3,7 +3,7 @@
 **Projet n°04** - Réalisé dans le cadre de la Formation Openclassrooms - **Administrateur systeme réseaux et Cybersécurité**
 
 **Prototype Extranet / Intranet** - Mairie de Valserac    
-Prototype pédagogique (Ubuntu 22.04, Apache, FTPS, CrowdSec) pour la formation Administrateur Systèmes, Réseaux & Cybersécurité 
+Prototype pédagogique (Ubuntu 22.04, Apache, FTPS, SFTP CrowdSec) pour la formation Administrateur Systèmes, Réseaux & Cybersécurité 
 
 ## Sommaire
 1. [Présentation du projet](#présentation-du-projet)
@@ -480,15 +480,25 @@ curl -Ik https://192.168.10.5:5502
 ![Test Extranet sur HTTPS](./captures/capture_intranet.jpeg)
 ![Test Extranet sur HTTPS](./captures/capture_intranet_certificat.jpeg)
 
+
+
+
 On a donc un Intranet sur **intranet.valserac.com**:
 - [x] **Ouvert** sur l'interface 192.168.10.5 et uniquement accessible par la patte réseau `192.168.10.0/24`
 - [x] **Redirection Actif** de `:5501` → `:5502` en HTTPS
 - [x] **Certificat SSL Actif** sur *intranet.valserac.com*
 
+On peut donc allé checker les logs Apache pour vérifier qu'il remonte bien les connexions 
+
+![Test LOG Extranet sur HTTPS](./captures/capture_apache2_log_extranet.jpeg)
+
+- [x] Une remonté des Logs des connexions sur **Extranet** et **Intranet**
+
 ---
 
 ![Static Badge](https://img.shields.io/badge/Configuration-8A7BE2) ![Static Badge](https://img.shields.io/badge/SFTP-8A3BE2)
 ![Static Badge](https://img.shields.io/badge/FTPS-2B3BE2)
+
 
 
 ## Les Services SFTP et FTPS 
@@ -1077,6 +1087,22 @@ Les Collections et le Bouncer pour apache sont bien installé sur le serveur, on
 
 - S'assurer que les logs des attaques remontes & bloque le IP :
     - Avec les Test des Scénario d'**attaque sur SSH** et **HTTP généric** 
+
+
+Commande pour tester l'attaque sur HTTP :
+
+![crowdsec console](./captures/capture_crowdsec_attaque.jpeg)
+
+On peut donc checker **directement** dans console l'alerte de Crowdsec avec le module **cscli** qui nous stipule **bien** une alerte
+
+![crowdsec console](./captures/crowdsec_console_alerte_list.jpeg)
+
+mais également avec la **metrics** qui remonte également l'alerte : 
+
+![crowdsec console](./captures/crowdsec_console_alerte_metrics.jpeg)
+
+![crowdsec console](./captures/crowdsec_console_alerte_metrics_2.jpeg)
+
 - Puis vérifier la **Remonté** sur la console Crowdsec 
 
 ![crowdsec console](./captures/crowdsec_console_alerte.jpeg)
