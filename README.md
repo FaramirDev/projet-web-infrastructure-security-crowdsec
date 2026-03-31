@@ -23,7 +23,6 @@ L'infrastructure repose sur une instance Ubuntu Server configurée en mode Dual-
 | eth0 | 150.10.0.0/16 | Public (Simulé) | Accès Extranet & Services Web |
 | eth1 | 192.168.10.0/24 | Privé (LAN) | Accès Intranet & Administration |
 
----Secure Infrastructure & Web Services Deployment
 
 ##  ------ Stack Technique & Implémentation  ------
 ### 1. Serveur Web & Chiffrement (Apache2 & OpenSSL)
