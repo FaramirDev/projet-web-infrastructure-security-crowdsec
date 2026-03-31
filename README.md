@@ -1,74 +1,75 @@
-# Mettez en place des infrastructures et services Web sécurisés
+# 🛡️ Secure Infrastructure & Web Services Deployment
+## Prototype Extranet/Intranet - Mairie de Valserac
 
-**Projet n°04** - Réalisé dans le cadre de la Formation Openclassrooms - **Administrateur systeme réseaux et Cybersécurité**
+## 📝 Présentation du Projet
+Ce projet consiste en la conception et le déploiement d'une infrastructure web sécurisée pour la Mairie de Valserac. L'enjeu est de fournir un prototype fonctionnel séparant les flux publics (Extranet) et privés (Intranet), tout en garantissant l'intégrité et la confidentialité des échanges de fichiers via des protocoles durcis (SFTP/FTPS).
 
-**Prototype Extranet / Intranet** - Mairie de Valserac    
-Prototype pédagogique (Ubuntu 22.04, Apache, FTPS, SFTP CrowdSec) pour la formation Administrateur Systèmes, Réseaux & Cybersécurité 
-
-## Sommaire
-1. [Présentation du projet](#présentation-du-projet)
-2. [Architecture du prototype](#architecture-du-prototype)
-3. [Installation du serveur web](#installation-du-serveur-web)
-4. [Mise en place du SSL](#mise-en-place-du-ssl)
-5. [Configuration virtual hosts extranet](#configuration-virtual-hosts-extranet)
-6. [Test Extranet sur https](#test-extranet-sur-https)
-7. [Configuration virtual hosts intranet](#configuration-virtual-hosts-intranet)
-8. [Test Intranet sur https](#test-intranet-sur-https)
-9. [Les Services SFTP et FTPS](#les-services-sftp-et-ftps)
-10. [Gestion des Acces et Permissions](#gestion-des-acces-et-permissions)
-11. [Configuration du Service SFTP](#configuration-du-service-sftp)
-12. [Test du Service SFTP ](#test-du-service-sftp)
-13. [Configuration du Service FTPS](#configuration-du-service-ftps)
-14. [Test du service FTPS](#test-du-service-ftps)
-15. [Configuration du parfeu avec UFW ](#configuration-du-parfeu-avec-ufw)
-16. [Installation et configuration de mod_evasive](#installation-et-configuration-de-mod_evasive)
-17. [Installation et Configuration de Crowdsec](#installation-et-configuration-de-crowdsec)
-18. [Test attaque et remonté sur la console de Crowdsec](#test-attaque-et-remonté-sur-la-console-de-crowdsec)
-19. [Conclusion du Projet](#conclusion-du-projet)
-
-
-## Présentation du Projet
-
-**Objectif :** Créer un prototype opérationnel pour **l’EXTRANET** et **l’INTRANET** de la **mairie de Valserac**, 
-- incluant : 
-    - Serveur Web sécurisé, 
-    - Serveur FTP sécurisé en FTPS
-    - Filtrage réseau,
-    - Protection avancée.
-
-**Context :**
-Administrateur systèmes et réseaux. Le Dr. Bertri a validé le projet. 
-Votre mission : fournir un prototype fonctionnel pour valider l’infrastructure avant le développement complet.
+## Objectifs Clés
+- **Segmentation Réseau** : Isolation stricte des interfaces publique et privée.
+- **Sécurisation Applicative** : Chiffrement SSL/TLS systématique et durcissement Apache.
+- **Gouvernance des Données** : Gestion granulaire des ACL (Access Control Lists) pour les profils métiers (Développeurs vs Graphistes).
+- **Défense en Profondeur** : Mise en œuvre d'une pile de sécurité multicouche (Pare-feu, Anti-DoS, IPS/IDS).
 
 --- 
 
-## Architecture du Prototype
-- **1.** Installer et configurer une VM Linux avec Ubuntu Server pour le serveur WEB.
-    - Avec deux Pattes Réseaux : 
-        - Public simulé avec `150.10.0.0/16`
-        - Privé avec `192.168.10.0/24`
+##  ------ Architecture du Prototype  ------
 
-- **2.** Créer deux sites distincts :  
-  - **Extranet public**  - Acces Public simulé sur `150.10.0.0/16`
-  - **Intranet privé** - Acces Uniquement via la patte réseau `192.168.10.0/24`
+### Topologie Réseau
+L'infrastructure repose sur une instance Ubuntu Server configurée en mode Dual-Homing (deux interfaces réseau) pour assurer une isolation physique et logique :
 
-- **3.** Redirection HTTP vers HTTPS avec generation Certificat SSL
-
-- **4.** Mettre en place un serveur FTPS sécurisé
-    - Les **developpeur** ont *acces* a l'ensemble des fichiers `/Extranet` et `/Intranet`
-    - Les **graphistes** ont *accès* seulement aux Dossiers `/Images` de chaque sites, Extranet et Intranet
-    - Toute personne ayant *acces* à l'Extranet doit pouvoir deposer un fichier au format `.PDF` dans le dossier `/pdf` dans Extranet depuis l'Extranet
-
-- **5.** Configurer un filtrage réseau strict :
-    - Avec UFW
-    - Mod_Evasive
-
-- **6.** Déployer CrowdSec pour prévenir les attaques :
-    - Simuler des Attaques et Remonter sur la console CrowdSec
+| -- Interface -- | -- Réseau -- | -- Segment -- | -- Usage -- |
+| eth0 | 150.10.0.0/16 | Public (Simulé) | Accès Extranet & Services Web |
+| eth1 | 192.168.10.0/24 | Privé (LAN) | Accès Intranet & Administration |
 
 ---
 
-## ![Static Badge](https://img.shields.io/badge/Installation-8A2BE2) Configuration réseau - VM-Serveur
+##  ------ Stack Technique & Implémentation  ------
+### 1. Serveur Web & Chiffrement (Apache2 & OpenSSL)
+- **Virtual Hosts**: Configuration de deux hôtes virtuels distincts avec séparation des DocumentRoot.
+- **Sécurité TLS** : Migration forcée du flux HTTP (port 80) vers HTTPS (port 443).
+- **Accès Conditionnel** : Restriction de l'accès Intranet via la directive Require ip 192.168.10.0/24.
+
+### 2. Transfert de Fichiers Sécurisé (SFTP/FTPS)
+Mise en place d'une politique de droits d'accès basée sur le principe du moindre privilège :
+
+- **Développeurs** : Accès RW complet sur l'arborescence /Extranet et /Intranet.
+- **Graphistes** : Accès restreint via Chroot aux répertoires /Images uniquement.
+- **Dépôt Public**: Configuration d'un dossier spécifique /pdf avec permissions d'écriture limitées pour les utilisateurs externes.
+
+### 3. Arsenal de Sécurité (Cybersecurity Layer)
+Pour contrer les menaces modernes, trois niveaux de protection ont été déployés :
+
+- **Filtrage Périmétrique (UFW)** : Politique de "Deny All" par défaut. Ouverture sélective des ports 80, 443, et des plages passives FTP.
+- **Protection Anti-DoS (Mod_Evasive)** : Détection et bannissement automatique des IP présentant un comportement suspect (requêtes trop fréquentes sur une même page).
+- **Analyse de Comportement (CrowdSec)** : * Analyse des logs en temps réel.
+- **Détection** d'attaques par force brute et scans de vulnérabilités.
+- **Remédiation** : Blocage automatique via le firewall et synchronisation avec la console Cloud pour le monitoring.
+
+##  ------ Sommaire ------
+1. [Présentation du projet](#-------presentation-projet-------)
+2. [Architecture du prototype](#-------architecture-du-prototype--------)
+3. [Installation du serveur web](#-------installation-du-serveur-web--------)
+4. [Mise en place du SSL](#mise-en-place-du-ssl)
+5. [Configuration virtual hosts extranet](#-------configuration-virtual-hosts-extranet-------)
+6. [Test Extranet sur https](#test-extranet-sur-https)
+7. [Configuration virtual hosts intranet](#-------configuration-virtual-hosts-intranet-------)
+8. [Test Intranet sur https](#test-intranet-sur-https)
+9. [Les Services SFTP et FTPS](#-------les-services-sftp-et-ftps--m-serveur-------)
+10. [Gestion des Acces et Permissions](#-------gestion-des-acces-et-permissions-------)
+11. [Configuration du Service SFTP](#-------configuration-du-service-sftp-------)
+12. [Test du Service SFTP ](#-------test-du-service-sftp-------)
+13. [Configuration du Service FTPS](#-------configuration-du-service-ftps-------)
+14. [Test du service FTPS](#-------test-du-service-ftps-------)
+15. [Configuration du parfeu avec UFW ](#-------configuration-du-parfeu-avec-ufw-------)
+16. [Installation et configuration de mod_evasive](#installation-et-configuration-de-mod_evasive)
+17. [Installation et Configuration de Crowdsec](#-------installation-et-configuration-de-crowdsec-------)
+18. [Test attaque et remonté sur la console de Crowdsec](#-------test-attaque-et-remonté-sur-la-console-de-crowdsec-------)
+19. [Conclusion du Projet](#-------conclusion-du-projet-------)
+
+
+---
+##  ------ PRESENTATION Projet ------
+## ![Static Badge](https://img.shields.io/badge/Installation-8A2BE2)  ------ Configuration réseau - VM-Serveur ------
 
 1. VM Créé via VirtualBox : 
     - OS : Ubuntu Server 22.04 - minimal graphic
@@ -119,7 +120,7 @@ On a donc maintenant :
 - [x] Réseaux Fonctionnel inter-machine
 
 ---
-## Installation du serveur web
+##  ------ Installation du serveur web  ------
 
 ### ![Static Badge](https://img.shields.io/badge/apache2%20-8A7BE2) Installation d'Apache
 
@@ -275,7 +276,7 @@ sudo openssl req -x509 -nodes -days 365 \   ## Generation ssl
 ---
 ![Static Badge](https://img.shields.io/badge/VirtualHost-8A7BE2) ![Static Badge](https://img.shields.io/badge/Extranet-8A5BE2)
 
-### Configuration virtual hosts extranet
+## ------ Configuration virtual hosts extranet ------ 
 
 - Pour **extranet.valserac.com**
 ```bash
@@ -382,7 +383,7 @@ On a donc un Extranet sur **extranet.valserac.com**:
 ---
 ![Static Badge](https://img.shields.io/badge/VirtualHost-8A7BE2) ![Static Badge](https://img.shields.io/badge/Intranet-8A5BE2)
 
-## Configuration virtual hosts intranet
+##  ------ Configuration virtual hosts intranet ------
 
 - Pour **intranet.valserac.com** :
     - Ici, pour l'intranet, le choix c'est porté d'écouter sur `5501` pour le HTTP et `5502` pour le HTTPS afin d'eviter les ports trop evident.
@@ -501,7 +502,7 @@ On peut donc allé checker les logs Apache pour vérifier qu'il remonte bien les
 
 
 
-## Les Services SFTP et FTPS 
+##  ------ Les Services SFTP et FTPS  M-Serveur ------
 
 Nous allons mettre un place un Service **SFTP** et un Service **FTPS** pour notre infrastructures Web.
 Qui permettra à nos **Developpeurs** et **Graphiste** de Travailler sur les élements spécifique du site.
@@ -533,7 +534,7 @@ Extension sécurisé du protocole FTP classique
 
 ---
 ![Static Badge](https://img.shields.io/badge/Configuration-8A7BE2) ![Static Badge](https://img.shields.io/badge/SFTP-8A3BE2)
-## Gestion des Acces et Permissions
+##  ------ Gestion des Acces et Permissions ------
 
 Nous allons créer un **Groupe** pour les **Graphistes** et un **groupe** pour les **Developpeurs**
 
@@ -598,7 +599,7 @@ Nous avons ici, une configuration qui crée une spération claire des roles et r
 
 ---
 ![Static Badge](https://img.shields.io/badge/Configuration-8A7BE2) ![Static Badge](https://img.shields.io/badge/SFTP-8A3BE2)
-## Configuration du Service SFTP
+##  ------ Configuration du Service SFTP ------
 
 Pour la configuration du service SFTP, nous allons crée une Arboressance avec un **chroot**
 
@@ -743,7 +744,7 @@ sur nos `vm-dev` et `vm-graph`
 ![Static Badge](https://img.shields.io/badge/Configuration-8A7BE2) ![Static Badge](https://img.shields.io/badge/SFTP-8A3BE2)
 ![Static Badge](https://img.shields.io/badge/Test-8A5BE8)
 
-## Test du Service SFTP 
+##  ------ Test du Service SFTP ------ 
 
 Notre configuration **SFTP** étant mis en place, nous allons **tester** dans un premier temps via la console, puis via le service FileZilla. 
 
@@ -781,7 +782,7 @@ Nous avons donc mainteant un service **SFTP** via **FileZilla** configuré et pr
 ![Static Badge](https://img.shields.io/badge/Configuration-8A5BE2)
 ![Static Badge](https://img.shields.io/badge/FTPS-2B3BE2)
 
-## Configuration du Service FTPS
+## ------ Configuration du Service FTPS ------
 
 Nous allons maintenant passez à la configuration du service FTP Sécurisé pour nos déveoppeur et Graphiste, a des fin de découverte et de mise en pratique de ce service.
 
@@ -913,7 +914,7 @@ Nous avons mainteant une configuration du service FTPS via **vsftpd** établie e
 ![Static Badge](https://img.shields.io/badge/FTPS-2B3BE2)
 ![Static Badge](https://img.shields.io/badge/FTPS-8A7BE2) ![Static Badge](https://img.shields.io/badge/test-8A3BE2)
 
-## Test du service FTPS 
+##  ------ Test du service FTPS ------
 
 **Sur les `vm-dev` et `vm-graphiste`**
 
@@ -944,7 +945,7 @@ Nous avons mainteant une connexion **FTPS** Etablie et **fonctionnelle**
 
 ---
 ![Static Badge](https://img.shields.io/badge/PARFEU-8A7BE2) ![Static Badge](https://img.shields.io/badge/UFW-8A3BE2)
-## Configuration du parfeu avec UFW 
+##  ------ Configuration du parfeu avec UFW ------ 
 
 La mise en place du parfeu par **UFW** a été mis a jour durant la mise en place du projet web
 
@@ -1005,7 +1006,7 @@ sudo a2enmod evasive                            ##Activation Evasive avec a2
 - [x] Installation et Configuration Simple du `mod_evasive` d'Apache vs les attaques DDos simple
 
 ![Static Badge](https://img.shields.io/badge/Securisation-8A7BE2) ![Static Badge](https://img.shields.io/badge/Crowdsec-8A3BE2)
-## Installation et Configuration de Crowdsec
+## ------ Installation et Configuration de Crowdsec ------
 
 CrowdSec detecte les Intrusions et fait de la prévention
 - Il surveille les logs systeme ( Apache, SSH, FTP, etc )
@@ -1060,7 +1061,7 @@ sudo systemctl status crowdsec
 ---
 ![Static Badge](https://img.shields.io/badge/Securisation-8A7BE2) ![Static Badge](https://img.shields.io/badge/Crowdsec-8A3BE2) ![Static Badge](https://img.shields.io/badge/Console-8A1BE7)
 
-## Test attaque et remonté sur la console de Crowdsec 
+## ------ Test attaque et remonté sur la console de Crowdsec ------ 
 
 - Configureration de notre serveur avec la console Crowdsec 
 
@@ -1112,21 +1113,12 @@ mais également avec la **metrics** qui remonte également l'alerte :
     - `Crowdsec` pour une protection Communautaire vs les IPs 
 
 
-### Conclusion du Projet 
+## ------ Conclusion du Projet ------ 
 
-
-Au cours de ce projet sur l'installation et la configuration d'une Infrastructure web via la mairie de Valserac, on a pu appliquer les compétences en :
-- **Administration système** avec l'installation, la configuration et la gestion de services Linux
-- Le **réseaux**, avec les différents NAT, pare-feu, ports et protcoles
-- Une mise en place de **Cybersécurité**, avec une **protection applicative** de `Crowdsec` et d'une protection de **DDos simple** avec `Evasive`
-- Une Supervision sur la lecture et exploitation des logs
-- Sur la manipulation applicative des commandes **shell**
-- Ainsi qu'une **redaction de rapport de la documentation technique**
-
-**Merci** d'avoir pris le temps de lire mon projet **d'infrastruce web**, un projet qui s'inscrit dans l'apprentissage et la monté en compétences au travers de la formation **Administrateur système, réseaux et cybersécurité.**
+Ce prototype démontre la faisabilité d'une infrastructure mutualisée mais cloisonnée. L'utilisation de solutions Open Source éprouvées combinée à une analyse comportementale (CrowdSec) permet d'atteindre un niveau de sécurité critique adapté aux exigences d'une collectivité territoriale.
 
 ---
 
- **Alexis alias Faramir!**   ![crowdsec console](./icone/bouclier_extr_low.png)
+**Auteur** : **Alexis Rousseau** - Administrateur Systèmes, Réseaux & Cybersécurité.
    
 
